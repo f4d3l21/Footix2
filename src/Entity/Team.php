@@ -2,10 +2,12 @@
 
 namespace App\Entity;
 
-use App\Repository\TeamRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\TeamRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
 class Team
@@ -13,15 +15,22 @@ class Team
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["team"])]
     private ?int $id = null;
 
+    #[Assert\NotBlank(message: 'Le nom de la team est obligatoire')]
+    #[Assert\NotNull()]
+    #[Assert\Length(min: 3, minMessage: 'Le nom de la team doit faire au moins 3 caractères')]
     #[ORM\Column(length: 255)]
+    #[Groups(["team"])]
     private ?string $teamName = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["team"])]
     private ?string $statusTeam = null;
 
     #[ORM\OneToMany(mappedBy: 'winner', targetEntity: Rencontre::class)]
+    #[Groups(["team"])]
     private Collection $rencontreWin;
 
     public function __construct()

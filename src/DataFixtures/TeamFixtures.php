@@ -19,7 +19,6 @@ class TeamFixtures extends Fixture
 
 
         for ($i=0; $i < 10 ; $i++) { 
-            //Generer des teams
             $team = new Team();
             $team->setTeamName("Team $i");
             

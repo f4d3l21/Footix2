@@ -2,9 +2,10 @@
 
 namespace App\Entity;
 
-use App\Repository\RencontreRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\RencontreRepository;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: RencontreRepository::class)]
 class Rencontre
@@ -12,29 +13,37 @@ class Rencontre
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["rencontre"])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(["rencontre"])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["rencontre"])]
     private ?Team $teamA = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["rencontre"])]
     private ?Team $teamB = null;
 
     #[ORM\ManyToOne(inversedBy: 'rencontreWin')]
+    #[Groups(["rencontre"])]
     private ?Team $winner = null;
 
     #[ORM\Column]
+    #[Groups(["rencontre"])]
     private ?int $scoreA = null;
 
     #[ORM\Column]
+    #[Groups(["rencontre"])]
     private ?int $scoreB = null;
 
     #[ORM\Column(length: 20)]
+    #[Groups(["rencontre"])]
     private ?string $status = null;
 
     public function getId(): ?int
