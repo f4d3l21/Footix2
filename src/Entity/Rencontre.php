@@ -43,7 +43,7 @@ class Rencontre
     #[Groups(["rencontre"])]
     private ?int $scoreB = null;
 
-    #[Assert\Choice(choices: ["on", "off"], message: 'Le statut doit être on ou off')]
+    #[Assert\Choice(choices: ["on", "off"], message: 'Le status doit être on ou off')]
     #[ORM\Column(length: 20)]
     #[Groups(["rencontre"])]
     private ?string $status = null;
