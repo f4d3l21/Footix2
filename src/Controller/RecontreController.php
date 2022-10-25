@@ -44,4 +44,18 @@ class RecontreController extends AbstractController
         ]);
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
+
+    #[Route('/api/team/{id}/ratio', name: 'rencontre.getOneTeamRation', methods: ['GET'])]
+    public function getOneTeamRatio(
+        TeamRepository $repository,
+        SerializerInterface $serializer,
+        int $id
+    ): JsonResponse {
+        $allRencontre = $repository->find($id);
+        $winnerRencontre = $repository->findBy(['winner_id' => $id]);
+        $data = $serializer->serialize($oneRencontre, 'json', [
+            'groups' => ['rencontre']
+        ]);
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
+    }
 }
