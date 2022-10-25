@@ -20,7 +20,7 @@ class Team
 
     #[Assert\NotBlank(message: 'Le nom de la team est obligatoire')]
     #[Assert\NotNull()]
-    #[Assert\Length(min: 3, minMessage: 'Le nom de la team doit faire au moins 3 caractères')]
+    #[Assert\Length(min: 3, minMessage: 'Le nom de la team doit faire au moins {{ limit }} caractères')]
     #[ORM\Column(length: 255)]
     #[Groups(["team"])]
     private ?string $teamName = null;

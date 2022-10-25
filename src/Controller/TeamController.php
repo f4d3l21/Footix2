@@ -61,24 +61,6 @@ class TeamController extends AbstractController
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/api/teams/{id}/ratio', name: 'teams.getOneRatio', methods: ['GET'])]
-    public function getOneTeamRatio(
-        TeamRepository $repository,
-        SerializerInterface $serializer,
-        ValidatorInterface $validator,
-        int $id
-        ): JsonResponse
-    {
-        $team = $repository->findBy(['teamA' => $id]);
-        $data = $serializer->serialize($team, 'json', [
-            'groups' => ['team']
-        ]);
-        $errors = $validator->validate($team);
-        if ($errors->count() > 0) {
-            $errorsJson = $serializer->serialize($errors, 'json');
-            return new JsonResponse($errorsJson, Response::HTTP_BAD_REQUEST, [], true);
-        }
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
-    }
+
 
 }
