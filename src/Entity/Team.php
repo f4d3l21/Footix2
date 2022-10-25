@@ -25,6 +25,7 @@ class Team
     #[Groups(["team"])]
     private ?string $teamName = null;
 
+    #[Assert\Choice(choices: ["on", "off"], message: 'Le statut doit être on ou off')]
     #[ORM\Column(length: 255)]
     #[Groups(["team"])]
     private ?string $statusTeam = null;

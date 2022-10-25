@@ -6,6 +6,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\RencontreRepository;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: RencontreRepository::class)]
 class Rencontre
@@ -42,6 +43,7 @@ class Rencontre
     #[Groups(["rencontre"])]
     private ?int $scoreB = null;
 
+    #[Assert\Choice(choices: ["on", "off"], message: 'Le statut doit être on ou off')]
     #[ORM\Column(length: 20)]
     #[Groups(["rencontre"])]
     private ?string $status = null;
