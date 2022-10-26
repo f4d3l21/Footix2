@@ -118,7 +118,17 @@ class TeamController extends AbstractController
         return new JsonResponse($jsonTeam, Response::HTTP_OK, [], true);
     }
 
-    //route delete team
+    /**
+     * Route to delete a team
+     * @Route("/api/deleteTeam/{id}", name="deleteTeam.delete", methods={"DELETE"})
+     * @param TeamRepository $repository
+     * @param SerializerInterface $serializer
+     * @param ValidatorInterface $validator
+     * @param EntityManagerInterface $entityManager
+     * @param int $id
+     * @return JsonResponse
+     */
+    
     #[Route('/api/deleteTeam/{idTeam}', name: 'deleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
     public function deleteTeam(
