@@ -7,45 +7,60 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\RencontreRepository;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use JMS\Serializer\Annotation as Serializer;
 
+use Hateoas\Configuration\Annotation as Hateoas;
+
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *      "rencontres.getOne",
+ *      parameters = { 
+ *      "id" = "expr(object.getId())"
+ *    }
+ * ),
+ *       exclusion = @Hateoas\Exclusion(groups="rencontre")
+ * )
+ */
 #[ORM\Entity(repositoryClass: RencontreRepository::class)]
 class Rencontre
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?Team $teamA = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?Team $teamB = null;
 
     #[ORM\ManyToOne(inversedBy: 'rencontreWin')]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?Team $winner = null;
 
     #[ORM\Column]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?int $scoreA = null;
 
     #[ORM\Column]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?int $scoreB = null;
 
     #[Assert\Choice(choices: ["on", "off"], message: 'Le status doit être on ou off')]
     #[ORM\Column(length: 20)]
-    #[Groups(["rencontre"])]
+    #[Serializer\Groups(["rencontre"])]
     private ?string $status = null;
 
     public function getId(): ?int

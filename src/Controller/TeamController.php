@@ -21,6 +21,10 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 
 class TeamController extends AbstractController
 {
+    /**
+     * Route Main page
+     * @return JsonResponse
+     */
     #[Route('/team', name: 'app_team')]
     public function index(): JsonResponse
     {
@@ -30,6 +34,14 @@ class TeamController extends AbstractController
         ]);
     }
 
+    /**
+     * Route for get all teams
+     * @Route("/api/teams", name="teams.getAll", methods={"GET"})
+     * @param TeamRepository $repository
+     * @param SerializerInterface $serializer
+     * @param TagAwareCacheInterface $cache
+     * @return JsonResponse
+     */
     #[Route('/api/teams', name: 'teams.getAll', methods: ['GET'])]
     public function getTeams(
         TeamRepository $repository,
@@ -46,10 +58,19 @@ class TeamController extends AbstractController
             $teams = $repository->findAll();
             $context = SerializationContext::create()->setGroups(['team']);
             return $serializer->serialize($teams, 'json', $context);
-        }); // fin du cache
+        });
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
+    /**
+     * Route for get one team by id
+     * @Route("/api/teams/{id}", name="teams.getOne", methods={"GET"})
+     * @param TeamRepository $repository
+     * @param SerializerInterface $serializer
+     * @param TagAwareCacheInterface $cache
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/api/teams/{id}', name: 'teams.getOne', methods: ['GET'])]
     // #[IsGranted('ROLE_ADMIN', message: 'Tu es rentré dans le panneau')]
     public function getOneTeam(
@@ -67,13 +88,13 @@ class TeamController extends AbstractController
             $team->setStatusTeam("on");
             $context = SerializationContext::create()->setGroups(['team']);
             return $serializer->serialize($team, 'json', $context);
-        }); // fin du cache
+        });
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
     /**
      * Route to create a new team
-     *
+     * @Route("/api/createTeam", name="createTeam.create", methods={"POST"})
      * @param ValidatorInterface $validator
      * @param Request $request
      * @param SerializerInterface $serializer
@@ -82,8 +103,12 @@ class TeamController extends AbstractController
      */
 
     #[Route('/api/createTeam', name: 'createTeam.create', methods: ['POST'])]
-    public function createTeam(ValidatorInterface $validator, Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager): JsonResponse
-    {
+    public function createTeam(
+        ValidatorInterface $validator, 
+        Request $request, 
+        SerializerInterface $serializer, 
+        EntityManagerInterface $entityManager
+        ): JsonResponse {
         $data = $request->getContent();
         $team = $serializer->deserialize($data, Team::class, 'json');
         $team->setStatusTeam("on");
@@ -99,7 +124,17 @@ class TeamController extends AbstractController
         return new JsonResponse($jsonTeam, Response::HTTP_CREATED, [], true);
     }
 
-    //route to update teams
+    /**
+     * Route to update a team
+     * @Route("/api/updateTeam/{id}", name="updateTeam.update", methods={"PUT"})
+     * @param TeamRepository $repository
+     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $entityManager
+     * @param Request $request
+     * @param TagAwareCacheInterface $cache
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/api/updateTeam/{id}', name: 'updateTeam.update', methods: ['PUT'])]
     public function updateTeam(
         TeamRepository $repository,
@@ -109,9 +144,11 @@ class TeamController extends AbstractController
         TagAwareCacheInterface $cache,
         int $id
     ): JsonResponse {
+
         $cache->invalidateTags(['teamCache']);
         $team = $repository->find($id);
         $data = $request->getContent();
+
         $updateTeam = $serializer->deserialize($data, Team::class, 'json');
         $team->setTeamName($updateTeam->getTeamName() ? $updateTeam->getTeamName() : $team->getTeamName());
         $team->setStatusTeam($updateTeam->getStatusTeam() ? $updateTeam->getStatusTeam() : $team->getStatusTeam());
@@ -124,16 +161,12 @@ class TeamController extends AbstractController
     }
 
     /**
-     * Route to delete a team
+     * Route to delete a team with it's id
      * @Route("/api/deleteTeam/{idTeam}", name="deleteTeam.delete", methods={"DELETE"})
-     * @param TeamRepository $repository
-     * @param SerializerInterface $serializer
-     * @param ValidatorInterface $validator
+     * @param Team $team
      * @param EntityManagerInterface $entityManager
-     * @param int $id
      * @return JsonResponse
      */
-
     #[Route('/api/deleteTeam/{idTeam}', name: 'deleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
     public function deleteTeam(
@@ -151,6 +184,13 @@ class TeamController extends AbstractController
         return new JsonResponse("Team deleted", Response::HTTP_OK, [], true);
     }
 
+    /**
+     * Route to update status team. Method SoftDelete
+     * @Route("/api/softDeleteTeam/{idTeam}", name="softDeleteTeam.delete", methods={"DELETE"})
+     * @param Team $team
+     * @param EntityManagerInterface $entityManager,
+     * @return JsonResponse
+     */
     #[Route('/api/softDeleteTeam/{idTeam}', name: 'softDeleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
     public function softDeleteOneTeam(
@@ -163,18 +203,4 @@ class TeamController extends AbstractController
 
         return new JsonResponse("Status team turn on off", Response::HTTP_OK);
     }
-
-    // #[Route('/api/softDeleteAllTeams', name: 'softDeleteAllTeams.delete', methods: ['DELETE'])]
-    // public function softDeleteAllTeam(
-    //     TeamRepository $repository,
-    //     EntityManagerInterface $entityManager,
-    // ): JsonResponse {
-    //     $teams = $repository->findAll();
-    //     foreach ($teams as $team) {
-    //         $team->setStatusTeam("off");
-    //         $entityManager->flush($teams);
-    //     }
-    //     $entityManager->flush();
-    //     return new JsonResponse("Status all teams turn on off", Response::HTTP_OK);
-    // }
 }
