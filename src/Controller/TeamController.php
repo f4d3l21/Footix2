@@ -104,18 +104,17 @@ class TeamController extends AbstractController
     public function updateTeam(
         TeamRepository $repository,
         SerializerInterface $serializer,
-        ValidatorInterface $validator,
         EntityManagerInterface $entityManager,
         Request $request,
+        TagAwareCacheInterface $cache,
         int $id
     ): JsonResponse {
+        $cache->invalidateTags(['teamCache']);
         $team = $repository->find($id);
         $data = $request->getContent();
-        $serializer->deserialize($data, Team::class, 'json', ['object_to_populate' => $team]);
-        $errors = $validator->validate($team);
-        if ($errors->count() > 0) {
-            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
-        }
+        $updateTeam = $serializer->deserialize($data, Team::class, 'json');
+        $team->setTeamName($updateTeam->getTeamName() ? $updateTeam->getTeamName() : $team->getTeamName());
+        $team->setStatusTeam($updateTeam->getStatusTeam() ? $updateTeam->getStatusTeam() : $team->getStatusTeam());
         $entityManager->persist($team);
         $entityManager->flush();
         $context = SerializationContext::create()->setGroups(['team']);
