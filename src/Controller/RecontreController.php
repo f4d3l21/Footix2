@@ -2,14 +2,15 @@
 
 namespace App\Controller;
 
+use App\Entity\Rencontre;
 use App\Repository\TeamRepository;
+use App\Repository\RencontreRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use App\Entity\Rencontre;
-use App\Repository\RencontreRepository;
 
 class RecontreController extends AbstractController
 {
@@ -22,26 +23,39 @@ class RecontreController extends AbstractController
         ]);
     }
 
-    #[Route('/api/rencontre', name: 'rencontre.getAll', methods: ['GET'])]
-    public function getRencontre(
-        TeamRepository $repository,
+    #[Route('/api/rencontres', name: 'rencontres.getAll', methods: ['GET'])]
+    public function getRencontres(
+        RencontreRepository $repository,
         SerializerInterface $serializer
     ): JsonResponse {
-        $rencontre = $repository->findAll();
+        $rencontres = $repository->findAll();
+        $data = $serializer->serialize($rencontres, 'json', [
+            'groups' => ['rencontre']
+        ]);
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
+    }
+    //get one rencontre
+    #[Route('/api/rencontres/{id}', name: 'rencontres.getOne', methods: ['GET'])]
+    public function getOneRencontre(
+        Rencontre $rencontre,
+        SerializerInterface $serializer
+    ): JsonResponse {
         $data = $serializer->serialize($rencontre, 'json', [
             'groups' => ['rencontre']
         ]);
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/api/rencontre/{id}', name: 'rencontre.getOne', methods: ['GET'])]
-    public function getOneRencontre(
-        TeamRepository $repository,
+    //get rencontre win by team
+    #[Route('/api/rencontres/team/{id}', name: 'rencontres.getByTeam', methods: ['GET'])]
+    public function getRencontreByTeam(
+        TeamRepository $teamRepository,
         SerializerInterface $serializer,
         int $id
     ): JsonResponse {
-        $oneRencontre = $repository->find($id);
-        $data = $serializer->serialize($oneRencontre, 'json', [
+        $team = $teamRepository->find($id);
+        $rencontres = $team->getRencontreWin();
+        $data = $serializer->serialize($rencontres, 'json', [
             'groups' => ['rencontre']
         ]);
         return new JsonResponse($data, Response::HTTP_OK, [], true);
@@ -52,49 +66,23 @@ class RecontreController extends AbstractController
         RencontreRepository $repository,
         SerializerInterface $serializer,
         int $id
-        ): JsonResponse
-    {
-        //$AllRencontre = $repository->createQueryBuilder('')
-        // $AllRencontre = $repository->createQueryBuilder(
-        //     'SELECT team_a_id, team_b_id,
-        //     FROM App\Entity\Rencontre rencontre 
-        //     WHERE rencontre.team_a_id = :id 
-        //     OR rencontre.team_b_id = :id'
-        // );
-
-        // $AllRencontre = $repository->select('team_a, team_b')
-        //     ->from('App\Entity\Rencontre', 'rencontre')
-        //     ->where('rencontre.team_a_id = :id')
-        //     ->or('rencontre.team_b_id = :id');
-
-        // returns an array of Product objects
+    ): JsonResponse {
         $AllRencontre = $repository->createQueryBuilder('rencontre')
             ->where('rencontre.teamA = :id')
             ->orWhere('rencontre.teamB = :id')
             ->setParameter('id', $id)
             ->getQuery()
-            ->getResult()
-        ;
+            ->getResult();
 
         $WinnerRencontre = $repository->createQueryBuilder('rencontre')
             ->where('rencontre.winner = :id')
             // ->orWhere('rencontre.teamB = :id')
             ->setParameter('id', $id)
             ->getQuery()
-            ->getResult()
-        ;
-
-        // $query = $AllRencontre->setParameter('id', $id)
-        //     ->getQuery()
-        //     ->getResult();
-        //return $AllRencontre->getQuery()->getResult();
-
-        //dd('TESTTTTT',$WinnerRencontre);
-
-        //$WinnerRencontre = $repository->findBy(['winner_id' => $id]);
+            ->getResult();
         $ratio = count($WinnerRencontre) / count($AllRencontre);
         $data = $serializer->serialize($ratio, 'json', [
-            'groups' => ['rencontre']
+            'groups' => 'rencontre'
         ]);
 
         return new JsonResponse($data, Response::HTTP_OK, [], true);

@@ -34,6 +34,13 @@ class Team
     #[Groups(["team"])]
     private Collection $rencontreWin;
 
+    #[ORM\OneToMany(mappedBy: 'teamA', targetEntity: Rencontre::class)]
+    #[Groups(["team"])]
+    private Collection $rencontreA;
+
+    #[ORM\OneToMany(mappedBy: 'teamB', targetEntity: Rencontre::class)]
+    #[Groups(["team"])]
+    private Collection $rencontreB;
     public function __construct()
     {
         $this->rencontreWin = new ArrayCollection();
@@ -75,7 +82,23 @@ class Team
     {
         return $this->rencontreWin;
     }
-
+    /**
+     * @return Collection<int, Rencontre>
+     */
+    public function getRencontre(): Collection
+    {
+        foreach ($this->rencontreB as $key => $element) {
+            $this->rencontreA->add($element);
+        }
+        return $this->rencontreA;
+    }
+    // {
+    //     // return [...$this->rencontreA->toArray(), ...$this->rencontreB->toArray()];
+    //     $rencontres = new ArrayCollection(
+    //         array_merge($this->rencontreA-- > toArray(), $this->rencontreB->toArray())
+    //     );
+    //     return $rencontres;
+    // }
     public function addRencontreWin(Rencontre $rencontreWin): self
     {
         if (!$this->rencontreWin->contains($rencontreWin)) {

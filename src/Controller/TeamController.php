@@ -14,7 +14,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class TeamController extends AbstractController
 {
@@ -32,19 +33,35 @@ class TeamController extends AbstractController
         TeamRepository $repository,
         SerializerInterface $serializer,
         ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
     ): JsonResponse {
-        $teams = $repository->findAll();
-        $data = $serializer->serialize($teams, 'json', [
-            'groups' => ['team']
-        ]);
-        $errors = $validator->validate($teams);
-        if ($errors->count() > 0) {
-            $errorsJson = $serializer->serialize($errors, 'json');
-            return new JsonResponse($errorsJson, Response::HTTP_BAD_REQUEST, [], true);
-        }
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
-    }
 
+        $idCache = 'getAllTeams';
+        $data = $cache->get($idCache, function (ItemInterface $item) use ($repository, $serializer, $validator) {
+            echo 'Mise en cache OK';
+            $item->tag('teamCache');
+
+            $teams = $repository->findAll();
+            $errors = $validator->validate($teams);
+            if ($errors->count() > 0) {
+                return [
+                    "data" => $serializer->serialize($errors, 'json'), "status" => JsonResponse::HTTP_BAD_REQUEST
+                ];
+                // return new JsonResponse($errorsJson, Response::HTTP_BAD_REQUEST, [], true);
+            }
+
+            return [
+                "data" => $serializer->serialize($teams, 'json', ['groups' => ['team']]),
+                "status" => Response::HTTP_OK
+            ];
+        }); // fin du cache
+        // $teams = $repository->findAll();
+        // $data = $serializer->serialize($teams, 'json', [
+        //     'groups' => ['team']
+        // ]);
+
+        return new JsonResponse($data['data'], $data['status'], [], true);
+    }
 
     #[Route('/api/teams/{id}', name: 'teams.getOne', methods: ['GET'])]
     // #[IsGranted('ROLE_ADMIN', message: 'Tu es rentré dans le panneau')]
@@ -120,7 +137,7 @@ class TeamController extends AbstractController
 
     /**
      * Route to delete a team
-     * @Route("/api/deleteTeam/{id}", name="deleteTeam.delete", methods={"DELETE"})
+     * @Route("/api/deleteTeam/{idTeam}", name="deleteTeam.delete", methods={"DELETE"})
      * @param TeamRepository $repository
      * @param SerializerInterface $serializer
      * @param ValidatorInterface $validator
@@ -128,24 +145,31 @@ class TeamController extends AbstractController
      * @param int $id
      * @return JsonResponse
      */
-    
+
     #[Route('/api/deleteTeam/{idTeam}', name: 'deleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
     public function deleteTeam(
         Team $team,
         EntityManagerInterface $entityManager,
+        TagAwareCacheInterface $cache
     ): JsonResponse {
+        // if (setStatusTeam("off")) {
+        $rencontres = $team->getRencontre();
+        foreach ($rencontres as $rencontre) {
+
+            $entityManager->remove($rencontre);
+        }
 
         $entityManager->remove($team);
         $entityManager->flush();
-
-        return new JsonResponse("Team deleted", Response::HTTP_OK);
+        // $cache->invalidateTags(['teamCache']);
+        // }
+        return new JsonResponse("Team deleted", Response::HTTP_OK, [], true);
     }
 
-    //route to update status team(soft delete)
     #[Route('/api/softDeleteTeam/{idTeam}', name: 'softDeleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
-    public function softDeleteTeam(
+    public function softDeleteOneTeam(
         Team $team,
         EntityManagerInterface $entityManager,
     ): JsonResponse {
@@ -153,6 +177,20 @@ class TeamController extends AbstractController
         $team->setStatusTeam("off");
         $entityManager->flush();
 
-        return new JsonResponse("Status teams turn on off", Response::HTTP_OK);
+        return new JsonResponse("Status team turn on off", Response::HTTP_OK);
+    }
+
+    #[Route('/api/softDeleteAllTeams', name: 'softDeleteAllTeams.delete', methods: ['DELETE'])]
+    public function softDeleteAllTeam(
+        TeamRepository $repository,
+        EntityManagerInterface $entityManager,
+    ): JsonResponse {
+        $teams = $repository->findAll();
+        foreach ($teams as $team) {
+            $team->setStatusTeam("off");
+            $entityManager->flush($teams);
+        }
+        $entityManager->flush();
+        return new JsonResponse("Status all teams turn on off", Response::HTTP_OK);
     }
 }
