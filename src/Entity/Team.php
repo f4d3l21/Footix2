@@ -2,44 +2,58 @@
 
 namespace App\Entity;
 
+use App\Entity\Rencontre;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\TeamRepository;
 use Doctrine\Common\Collections\Collection;
+use JMS\Serializer\Annotation as Serializer;
 use Doctrine\Common\Collections\ArrayCollection;
-use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
+use Hateoas\Configuration\Annotation as Hateoas;
+use Symfony\Component\Validator\Constraints as Assert;
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *      "teams.getOne",
+ *      parameters = { 
+ *      "id" = "expr(object.getId())"
+ *    }
+ * ),
+ *       exclusion = @Hateoas\Exclusion(groups="team")
+ * )
+*/
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
 class Team
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["team"])]
+    #[Serializer\Groups(["team"])]
     private ?int $id = null;
 
     #[Assert\NotBlank(message: 'Le nom de la team est obligatoire')]
     #[Assert\NotNull()]
     #[Assert\Length(min: 3, minMessage: 'Le nom de la team doit faire au moins {{ limit }} caractères')]
     #[ORM\Column(length: 255)]
-    #[Groups(["team"])]
+    #[Serializer\Groups(["team"])]
     private ?string $teamName = null;
 
     #[Assert\Choice(choices: ["on", "off"], message: 'Le statut doit être on ou off')]
     #[ORM\Column(length: 255)]
-    #[Groups(["team"])]
+    #[Serializer\Groups(["team"])]
     private ?string $statusTeam = null;
 
     #[ORM\OneToMany(mappedBy: 'winner', targetEntity: Rencontre::class)]
-    #[Groups(["team"])]
+    #[Serializer\Groups(["team"])]
     private Collection $rencontreWin;
 
     #[ORM\OneToMany(mappedBy: 'teamA', targetEntity: Rencontre::class)]
-    #[Groups(["team"])]
+    #[Serializer\Groups(["team"])]
     private Collection $rencontreA;
 
     #[ORM\OneToMany(mappedBy: 'teamB', targetEntity: Rencontre::class)]
-    #[Groups(["team"])]
+    #[Serializer\Groups(["team"])]
     private Collection $rencontreB;
     public function __construct()
     {
@@ -92,13 +106,6 @@ class Team
         }
         return $this->rencontreA;
     }
-    // {
-    //     // return [...$this->rencontreA->toArray(), ...$this->rencontreB->toArray()];
-    //     $rencontres = new ArrayCollection(
-    //         array_merge($this->rencontreA-- > toArray(), $this->rencontreB->toArray())
-    //     );
-    //     return $rencontres;
-    // }
     public function addRencontreWin(Rencontre $rencontreWin): self
     {
         if (!$this->rencontreWin->contains($rencontreWin)) {
