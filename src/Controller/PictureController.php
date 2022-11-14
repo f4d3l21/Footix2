@@ -15,6 +15,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class PictureController extends AbstractController
 {
+    /**
+     * Route Main page
+     * @return JsonResponse
+     */
     #[Route('/picture', name: 'app_picture')]
     public function index(): JsonResponse
     {
@@ -24,6 +28,15 @@ class PictureController extends AbstractController
         ]);
     }
 
+    /**
+     * Route for get one picture
+     * @Route("/api/pictures", name="pictures.get", methods={"GET"})
+     * @param int $idPicture
+     * @param SerializerInterface $serializer
+     * @param PictureRepository $repository
+     * @param Request $request
+     * @return JsonResponse
+     */
     #[Route('/api/picture/{idPicture}', name: 'picture.get', methods: ['GET'])]
     public function getPicture(
         int $idPicture,
@@ -52,9 +65,22 @@ class PictureController extends AbstractController
         }
     }
 
+    /**
+     * Route for insert a picture 
+     * @Route("/api/pictures", name="pictures.create", methods={"POST"})
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @param SerializerInterface $serializer
+     * @param UrlGeneratorInterface $urlGenerator
+     * @return JsonResponse
+     */
     #[Route('/api/pictures', name: 'picture.create', methods: ['POST'])]
-    public function createPicture(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
-    {
+    public function createPicture(
+        Request $request, 
+        EntityManagerInterface $entityManager, 
+        SerializerInterface $serializer, 
+        UrlGeneratorInterface $urlGenerator
+        ): JsonResponse {
         $picture = new Picture();
         $files = $request->files->get('file');
         $picture->setFile($files);
