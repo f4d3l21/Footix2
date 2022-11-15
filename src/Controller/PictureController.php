@@ -12,13 +12,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use OpenApi\Attributes as OA;
 
 class PictureController extends AbstractController
 {
-    /**
-     * Route Main page
-     * @return JsonResponse
-     */
     #[Route('/picture', name: 'app_picture')]
     public function index(): JsonResponse
     {
@@ -29,14 +26,9 @@ class PictureController extends AbstractController
     }
 
     /**
-     * Route for get one picture
-     * @Route("/api/pictures", name="pictures.get", methods={"GET"})
-     * @param int $idPicture
-     * @param SerializerInterface $serializer
-     * @param PictureRepository $repository
-     * @param Request $request
-     * @return JsonResponse
+     * Route to get one picture by id
      */
+    #[OA\Tag(name: 'Picture')]
     #[Route('/api/picture/{idPicture}', name: 'picture.get', methods: ['GET'])]
     public function getPicture(
         int $idPicture,
@@ -50,30 +42,22 @@ class PictureController extends AbstractController
         $location = $request->getUriForPath('/');
         $location = $location . str_replace("/assets", "assets", $relativePath);
         if ($picture) {
-            return new JsonResponse(
-                $serializer->serialize(
-                    $picture,
-                    'json',
-                    ["groups" => "getPicture"]
-                ),
-                JsonResponse::HTTP_OK,
-                ["Location" => $location],
-                true
-            );
+            return new JsonResponse( $serializer->serialize($picture,'json',["groups" => "getPicture"]),JsonResponse::HTTP_OK,["Location" => $location],true);
         } else {
             return new JsonResponse(null, JsonResponse::HTTP_NOT_FOUND);
         }
     }
 
     /**
-     * Route for insert a picture 
-     * @Route("/api/pictures", name="pictures.create", methods={"POST"})
-     * @param Request $request
-     * @param EntityManagerInterface $entityManager
-     * @param SerializerInterface $serializer
-     * @param UrlGeneratorInterface $urlGenerator
-     * @return JsonResponse
+     * Routes for create and insert a picture
      */
+    #[OA\Tag(name: 'Picture')]
+    // #[OA\Parameter(
+    //     name: 'order',
+    //     in: 'query',
+    //     description: 'The field used to order rewards',
+    //     schema: new OA\Schema(type: 'string')
+    // )]
     #[Route('/api/pictures', name: 'picture.create', methods: ['POST'])]
     public function createPicture(
         Request $request, 

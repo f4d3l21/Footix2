@@ -3,26 +3,23 @@
 namespace App\Controller;
 
 use App\Entity\Rencontre;
+use JMS\Serializer\Serializer;
 use App\Repository\TeamRepository;
 use App\Repository\RencontreRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializerInterface;
 use JMS\Serializer\SerializationContext;
-use JMS\Serializer\Serializer;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use OpenApi\Attributes as OA;
 
 class RecontreController extends AbstractController
 {
 
-    /**
-     * Route Main page
-     * @Route("/api/rencontres", name="rencontres.getAll", methods={"GET"})
-     */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/rencontre', name: 'app_recontre')]
     public function index(): JsonResponse
     {
@@ -33,13 +30,9 @@ class RecontreController extends AbstractController
     }
 
     /**
-     * Route for get all rencontres between two teams
-     * @Route("/api/rencontres", name="rencontres.getAll", methods={"GET"})
-     * @param RencontreRepository $repository
-     * @param SerializerInterface $serializer
-     * @param TagAwareCacheInterface $cache
-     * @return JsonResponse
+     * Route to get all rencontres
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres', name: 'rencontres.getAll', methods: ['GET'])]
     public function getRencontres(
         RencontreRepository $repository,
@@ -59,79 +52,84 @@ class RecontreController extends AbstractController
         }); // fin du cache
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
+
+
     /**
-     * Route for get one rencontre between two teams by id
-     * @Route("/api/rencontres/{id}", name="rencontres.getOne", methods={"GET"})
-     * @param Rencontre $rencontre
-     * @param SerializerInterface $serializer
-     * @param int $id
-     * @return JsonResponse
+     * Route to get one rencontre by id
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres/{id}', name: 'rencontres.getOne', methods: ['GET'])]
     public function getOneRencontre(
         Rencontre $rencontre,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        TagAwareCacheInterface $cache
     ): JsonResponse {
-        $data = $serializer->serialize($rencontre, 'json', [
-            'groups' => ['rencontre']
-        ]);
+        $cacheId = 'getOneRencontre' . $rencontre->getId();
+        $data = $cache->get($cacheId, function (ItemInterface $item) use ($rencontre, $serializer) {
+            $item->tag('rencontreCache');
+            echo 'Mise en cache OK';
+            $context = SerializationContext::create()->setGroups(['rencontre']);
+            return $serializer->serialize($rencontre, 'json', $context);
+        });    
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
+
     /**
-     * Route for get wins of team by id
-     * @Route("/api/rencontres/team/{id}", name="rencontres.getByTeam", methods={"GET"})
-     * @param TeamRepository $teamRepository
-     * @param SerializerInterface $serializer
-     * @param int $id
-     * @return JsonResponse
+     * Route to get rencontre team win by id
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres/team/{id}', name: 'rencontres.getByTeam', methods: ['GET'])]
     public function getRencontreByTeam(
         TeamRepository $teamRepository,
         SerializerInterface $serializer,
+        TagAwareCacheInterface $cache,
         int $id
     ): JsonResponse {
-        $team = $teamRepository->find($id);
-        $rencontres = $team->getRencontreWin();
-        $data = $serializer->serialize($rencontres, 'json', [
-            'groups' => ['rencontre']
-        ]);
+        $cacheId = 'getRencontreByTeam' . $id;
+        $data = $cache->get($cacheId, function (ItemInterface $item) use ($teamRepository, $serializer, $id) {
+            $item->tag('rencontreCache');
+            echo 'Mise en cache OK';
+            $team = $teamRepository->find($id);
+            $rencontres = $team->getRencontre();
+            $context = SerializationContext::create()->setGroups(['rencontre']);
+            return $serializer->serialize($rencontres, 'json', $context);
+        });
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
     /**
-     * Route for get ratio of team 
-     * @Route("//api/teams/{id}/ratio", name="rencontre.getOneRatio", methods={"POST"})
-     * @param RencontreRepository $rencontreRepository
-     * @param SerializerInterface $serializer
-     * @param int $id
-     * @return JsonResponse
+     * Route to get team ratio by id
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/teams/{id}/ratio', name: 'rencontre.getOneRatio', methods: ['GET'])]
     public function getOneTeamRatio(
         RencontreRepository $repository,
         SerializerInterface $serializer,
+        TagAwareCacheInterface $cache,
         int $id
     ): JsonResponse {
-        $AllRencontre = $repository->createQueryBuilder('rencontre')
+        $cacheId = 'getOneTeamRatio' . $id;
+        $data = $cache->get($cacheId, function (ItemInterface $item) use ($repository, $serializer, $id) {
+            $item->tag('rencontreCache');
+            echo 'Mise en cache OK';
+            $AllRencontre = $repository->createQueryBuilder('rencontre')
             ->where('rencontre.teamA = :id')
             ->orWhere('rencontre.teamB = :id')
             ->setParameter('id', $id)
             ->getQuery()
             ->getResult();
-
-        $WinnerRencontre = $repository->createQueryBuilder('rencontre')
+                
+            $WinnerRencontre = $repository->createQueryBuilder('rencontre')
             ->where('rencontre.winner = :id')
-            // ->orWhere('rencontre.teamB = :id')
             ->setParameter('id', $id)
             ->getQuery()
             ->getResult();
-        $ratio = count($WinnerRencontre) / count($AllRencontre);
-        $data = $serializer->serialize($ratio, 'json', [
-            'groups' => 'rencontre'
-        ]);
-
+            $ratio = count($WinnerRencontre) / count($AllRencontre);
+            $context = SerializationContext::create()->setGroups(['rencontre']);
+            
+            return $serializer->serialize($ratio, 'json', $context);
+        });
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 }

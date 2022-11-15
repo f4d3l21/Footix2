@@ -3,11 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Team;
+use JMS\Serializer\Serializer;
 use App\Repository\TeamRepository;
 use JMS\Serializer\SerializerInterface;
-use JMS\Serializer\Serializer;
-use JMS\Serializer\SerializationContext;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,13 +18,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use OpenApi\Attributes as OA;
 
 class TeamController extends AbstractController
 {
-    /**
-     * Route Main page
-     * @return JsonResponse
-     */
+
     #[Route('/team', name: 'app_team')]
     public function index(): JsonResponse
     {
@@ -35,23 +33,19 @@ class TeamController extends AbstractController
     }
 
     /**
-     * Route for get all teams
-     * @Route("/api/teams", name="teams.getAll", methods={"GET"})
-     * @param TeamRepository $repository
-     * @param SerializerInterface $serializer
-     * @param TagAwareCacheInterface $cache
-     * @return JsonResponse
+     * Route to get all teams
      */
+    #[OA\Tag(name: 'Team')]
+    #[OA\Parameter (name: 'id', in: 'path', description: 'Team id', required: true)]
     #[Route('/api/teams', name: 'teams.getAll', methods: ['GET'])]
     public function getTeams(
         TeamRepository $repository,
         SerializerInterface $serializer,
-        TagAwareCacheInterface $cache
-    ): JsonResponse {
-
-        $idCache = 'getAllTeams';
-        $data = $cache->get($idCache, function (ItemInterface $item) use ($repository, $serializer) {
-
+        TagAwareCacheInterface $cache, 
+        ): JsonResponse {
+            $idCache = 'getAllTeams';
+            $data = $cache->get($idCache, function (ItemInterface $item) use ($repository, $serializer) {
+            
             echo 'Mise en cache OK';
             $item->tag('teamCache');
 
@@ -63,16 +57,15 @@ class TeamController extends AbstractController
     }
 
     /**
-     * Route for get one team by id
-     * @Route("/api/teams/{id}", name="teams.getOne", methods={"GET"})
-     * @param TeamRepository $repository
-     * @param SerializerInterface $serializer
-     * @param TagAwareCacheInterface $cache
-     * @param int $id
-     * @return JsonResponse
+     * Route to get one team by id
      */
+    #[OA\Tag(name: 'Team')]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+    )]
     #[Route('/api/teams/{id}', name: 'teams.getOne', methods: ['GET'])]
-    // #[IsGranted('ROLE_ADMIN', message: 'Tu es rentré dans le panneau')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     public function getOneTeam(
         TeamRepository $repository,
         SerializerInterface $serializer,
@@ -93,29 +86,29 @@ class TeamController extends AbstractController
     }
 
     /**
-     * Route to create a new team
-     * @Route("/api/createTeam", name="createTeam.create", methods={"POST"})
-     * @param ValidatorInterface $validator
-     * @param Request $request
-     * @param SerializerInterface $serializer
-     * @param EntityManagerInterface $entityManager
-     * @return JsonResponse
+     * Route to create a team
      */
-
+    #[OA\Tag(name: 'Team')]
     #[Route('/api/createTeam', name: 'createTeam.create', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     public function createTeam(
         ValidatorInterface $validator, 
         Request $request, 
         SerializerInterface $serializer, 
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager, 
+        TagAwareCacheInterface $cache
         ): JsonResponse {
+
+        $cache->invalidateTags(['teamCache']);
         $data = $request->getContent();
         $team = $serializer->deserialize($data, Team::class, 'json');
         $team->setStatusTeam("on");
+
         $errors = $validator->validate($team);
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
+
         $entityManager->persist($team);
         $entityManager->flush();
         $context = SerializationContext::create()->setGroups(['team']);
@@ -125,21 +118,16 @@ class TeamController extends AbstractController
     }
 
     /**
-     * Route to update a team
-     * @Route("/api/updateTeam/{id}", name="updateTeam.update", methods={"PUT"})
-     * @param TeamRepository $repository
-     * @param SerializerInterface $serializer
-     * @param EntityManagerInterface $entityManager
-     * @param Request $request
-     * @param TagAwareCacheInterface $cache
-     * @param int $id
-     * @return JsonResponse
+     * Route to update a team with id
      */
+    #[OA\Tag(name: 'Team')]
     #[Route('/api/updateTeam/{id}', name: 'updateTeam.update', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     public function updateTeam(
         TeamRepository $repository,
         SerializerInterface $serializer,
         EntityManagerInterface $entityManager,
+        ValidatorInterface $validator,
         Request $request,
         TagAwareCacheInterface $cache,
         int $id
@@ -149,6 +137,7 @@ class TeamController extends AbstractController
         $team = $repository->find($id);
         $data = $request->getContent();
 
+        
         $updateTeam = $serializer->deserialize($data, Team::class, 'json');
         $team->setTeamName($updateTeam->getTeamName() ? $updateTeam->getTeamName() : $team->getTeamName());
         $team->setStatusTeam($updateTeam->getStatusTeam() ? $updateTeam->getStatusTeam() : $team->getStatusTeam());
@@ -156,23 +145,28 @@ class TeamController extends AbstractController
         $entityManager->flush();
         $context = SerializationContext::create()->setGroups(['team']);
         $jsonTeam = $serializer->serialize($team, 'json', $context);
+        
+        $errors = $validator->validate($team);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
 
         return new JsonResponse($jsonTeam, Response::HTTP_OK, [], true);
     }
 
-    /**
-     * Route to delete a team with it's id
-     * @Route("/api/deleteTeam/{idTeam}", name="deleteTeam.delete", methods={"DELETE"})
-     * @param Team $team
-     * @param EntityManagerInterface $entityManager
-     * @return JsonResponse
-     */
+    /** 
+     * Route to delete a team by id 
+    */
+    #[OA\Tag(name: 'Team')]
     #[Route('/api/deleteTeam/{idTeam}', name: 'deleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     public function deleteTeam(
         Team $team,
         EntityManagerInterface $entityManager,
+        TagAwareCacheInterface $cache
     ): JsonResponse {
+        $cache->invalidateTags(['teamCache']);
         $rencontres = $team->getRencontre();
         foreach ($rencontres as $rencontre) {
 
@@ -184,14 +178,12 @@ class TeamController extends AbstractController
         return new JsonResponse("Team deleted", Response::HTTP_OK, [], true);
     }
 
-    /**
-     * Route to update status team. Method SoftDelete
-     * @Route("/api/softDeleteTeam/{idTeam}", name="softDeleteTeam.delete", methods={"DELETE"})
-     * @param Team $team
-     * @param EntityManagerInterface $entityManager,
-     * @return JsonResponse
-     */
+    /** 
+    * Route to change status team by id 
+    */
+    #[OA\Tag(name: 'Team')]
     #[Route('/api/softDeleteTeam/{idTeam}', name: 'softDeleteTeam.delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
     public function softDeleteOneTeam(
         Team $team,
