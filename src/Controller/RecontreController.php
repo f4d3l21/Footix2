@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Rencontre;
+use JMS\Serializer\Serializer;
 use App\Repository\TeamRepository;
 use App\Repository\RencontreRepository;
 use JMS\Serializer\SerializerInterface;
@@ -13,11 +14,12 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class RecontreController extends AbstractController
 {
 
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/rencontre', name: 'app_recontre')]
     public function index(): JsonResponse
     {
@@ -29,15 +31,8 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get all rencontres
-     * @OA\Tag(name="Rencontre")
-     * Security(name: 'Bearer')]
-     * @OA\Response(
-     *     response=200,
-     *    description="Successful response",
-     *     response=404,
-     *   description="Not found",
-     * )
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres', name: 'rencontres.getAll', methods: ['GET'])]
     public function getRencontres(
         RencontreRepository $repository,
@@ -61,15 +56,8 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get one rencontre by id
-     * @OA\Tag(name="Rencontre")
-     * Security(name: 'Bearer')]
-     * @OA\Response(
-     *     response=200,
-     *    description="Successful response",
-     *     response=404,
-     *   description="Not found",
-     * )
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres/{id}', name: 'rencontres.getOne', methods: ['GET'])]
     public function getOneRencontre(
         Rencontre $rencontre,
@@ -82,22 +70,15 @@ class RecontreController extends AbstractController
             echo 'Mise en cache OK';
             $context = SerializationContext::create()->setGroups(['rencontre']);
             return $serializer->serialize($rencontre, 'json', $context);
-        });
+        });    
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
 
     /**
      * Route to get rencontre team win by id
-     * @OA\Tag(name="Rencontre")
-     * Security(name: 'Bearer')]
-     * @OA\Response(
-     *     response=200,
-     *    description="Successful response",
-     *     response=404,
-     *   description="Not found",
-     *)
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres/team/{id}', name: 'rencontres.getByTeam', methods: ['GET'])]
     public function getRencontreByTeam(
         TeamRepository $teamRepository,
@@ -119,15 +100,8 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get team ratio by id
-     * @OA\Tag(name="Rencontre")
-     * Security(name: 'Bearer')]
-     * @OA\Response(
-     *     response=200,
-     *    description="Successful response",
-     *     response=404,
-     *   description="Not found",
-     * )
      */
+    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/teams/{id}/ratio', name: 'rencontre.getOneRatio', methods: ['GET'])]
     public function getOneTeamRatio(
         RencontreRepository $repository,
@@ -140,20 +114,20 @@ class RecontreController extends AbstractController
             $item->tag('rencontreCache');
             echo 'Mise en cache OK';
             $AllRencontre = $repository->createQueryBuilder('rencontre')
-                ->where('rencontre.teamA = :id')
-                ->orWhere('rencontre.teamB = :id')
-                ->setParameter('id', $id)
-                ->getQuery()
-                ->getResult();
-
+            ->where('rencontre.teamA = :id')
+            ->orWhere('rencontre.teamB = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
+                
             $WinnerRencontre = $repository->createQueryBuilder('rencontre')
-                ->where('rencontre.winner = :id')
-                ->setParameter('id', $id)
-                ->getQuery()
-                ->getResult();
+            ->where('rencontre.winner = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
             $ratio = count($WinnerRencontre) / count($AllRencontre);
             $context = SerializationContext::create()->setGroups(['rencontre']);
-
+            
             return $serializer->serialize($ratio, 'json', $context);
         });
         return new JsonResponse($data, Response::HTTP_OK, [], true);
