@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Rencontre;
+use App\Entity\Team;
 use JMS\Serializer\Serializer;
 use App\Repository\TeamRepository;
 use App\Repository\RencontreRepository;
+use Doctrine\Persistence\ObjectManager;
 use JMS\Serializer\SerializerInterface;
 use JMS\Serializer\SerializationContext;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -107,10 +109,12 @@ class RecontreController extends AbstractController
         RencontreRepository $repository,
         SerializerInterface $serializer,
         TagAwareCacheInterface $cache,
+        Team $team,
+        ObjectManager $manager,
         int $id
     ): JsonResponse {
         $cacheId = 'getOneTeamRatio' . $id;
-        $data = $cache->get($cacheId, function (ItemInterface $item) use ($repository, $serializer, $id) {
+        $data = $cache->get($cacheId, function (ItemInterface $item) use ($repository, $serializer, $id, $manager, $team) {
             $item->tag('rencontreCache');
             echo 'Mise en cache OK';
             $AllRencontre = $repository->createQueryBuilder('rencontre')
@@ -126,10 +130,44 @@ class RecontreController extends AbstractController
             ->getQuery()
             ->getResult();
             $ratio = count($WinnerRencontre) / count($AllRencontre);
+            
+            // $team = new Team();
+            // $team->setRatio($ratio);
+            // $manager->persist($team);
+            // $manager->flush();
             $context = SerializationContext::create()->setGroups(['rencontre']);
             
             return $serializer->serialize($ratio, 'json', $context);
         });
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
+
+    #[OA\Tag(name: 'Team')]
+    #[OA\Parameter (name: 'id', in: 'path', description: 'Team poule', required: true)]
+    #[Route('/api/teams/poule', name: 'teams.getPoule', methods: ['GET'])]
+    public function getPouleTeam(
+        TeamRepository $repository,
+        SerializerInterface $serializer,
+        TagAwareCacheInterface $cache, 
+        ): JsonResponse {
+            $idCache = 'getAllTeamsPoule';
+            $data = $cache->get($idCache, function (ItemInterface $item) use ($repository, $serializer) {
+            
+            echo 'Mise en cache OK';
+            $item->tag('pouleCache');
+
+            // $poule = $repository->findAll(rand());
+
+            $AllRencontre = $repository->createQueryBuilder('team')
+            ->orderBy('poule')
+            ->where('poule = :id')
+            ->getQuery()
+            ->getResult();
+
+            $context = SerializationContext::create()->setGroups(['team']);
+            return $serializer->serialize($AllRencontre, 'json', $context);
+        });
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
+    }
+
 }
