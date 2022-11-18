@@ -52,6 +52,7 @@ class TeamFixtures extends Fixture
             $team = new Team();
             $team->setTeamName("Team $i");
             $team->setStatusTeam("on");
+            $team->setPoule(rand(1, 2));
             $teamList[] = $team;
             $manager->persist($team);
         }

@@ -55,6 +55,12 @@ class Team
     #[ORM\OneToMany(mappedBy: 'teamB', targetEntity: Rencontre::class)]
     #[Serializer\Groups(["team"])]
     private Collection $rencontreB;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $ratio = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $poule = null;
     public function __construct()
     {
         $this->rencontreWin = new ArrayCollection();
@@ -124,6 +130,30 @@ class Team
                 $rencontreWin->setWinner(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getRatio(): ?float
+    {
+        return $this->ratio;
+    }
+
+    public function setRatio(?float $ratio): self
+    {
+        $this->ratio = $ratio;
+
+        return $this;
+    }
+
+    public function getPoule(): ?string
+    {
+        return $this->poule;
+    }
+
+    public function setPoule(string $poule): self
+    {
+        $this->poule = $poule;
 
         return $this;
     }
