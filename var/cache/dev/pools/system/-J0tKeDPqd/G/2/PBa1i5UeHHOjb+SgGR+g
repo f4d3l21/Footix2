@@ -1,0 +1,67 @@
+<?php //App%255CController%255CTeamController%2523updateTeam
+
+return [PHP_INT_MAX, static function () { return \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['OpenApi\\Annotations\\Tag'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Tag')),
+        clone ($p['OpenApi\\Context'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Context')),
+        clone ($p['OpenApi\\Loggers\\DefaultLogger'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Loggers\\DefaultLogger')),
+        clone ($p['OpenApi\\Annotations\\Response'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('OpenApi\\Annotations\\Response')),
+        clone $p['OpenApi\\Context'],
+        clone $p['OpenApi\\Loggers\\DefaultLogger'],
+    ],
+    null,
+    [
+        'stdClass' => [
+            '_context' => [
+                $o[1],
+                3 => $o[4],
+            ],
+            'name' => [
+                'Team',
+            ],
+            'logger' => [
+                1 => $o[2],
+                4 => $o[5],
+            ],
+            'filename' => [
+                1 => '/Users/matteo/Dev/GithubYnov/Api/Footix2/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+                4 => '/Users/matteo/Dev/GithubYnov/Api/Footix2/vendor/doctrine/annotations/lib/Doctrine/Common/Annotations/DocParser.php',
+            ],
+            'line' => [
+                1 => 1474,
+                4 => 1474,
+            ],
+            'method' => [
+                1 => 'instantiateAnnotiation',
+                4 => 'instantiateAnnotiation',
+            ],
+            'class' => [
+                1 => 'DocParser',
+                4 => 'DocParser',
+            ],
+            'namespace' => [
+                1 => 'Doctrine\\Common\\Annotations',
+                4 => 'Doctrine\\Common\\Annotations',
+            ],
+            'annotations' => [
+                1 => [
+                    $o[0],
+                ],
+                4 => [
+                    $o[3],
+                ],
+            ],
+            'response' => [
+                3 => 404,
+            ],
+            'description' => [
+                3 => 'Not found',
+            ],
+        ],
+    ],
+    [
+        $o[0],
+        $o[3],
+    ],
+    []
+); }];
