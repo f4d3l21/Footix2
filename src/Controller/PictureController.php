@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,9 +31,70 @@ class PictureController extends AbstractController
         ]);
     }
 
+
+    /**
+     * Route for create a picture
+     * @OA\Tag(name="Picture")
+     * Security(name: 'Bearer')]
+     * @OA\RequestBody(
+     *      description= "Complete field to create a picture",
+     *      required= true,
+     *      @OA\JsonContent(
+     *          type="object",
+     *          @OA\Property(property="realName", type="string"),
+     *          @OA\Property(property="realPath", type="string"),
+     *          @OA\Property(property="mimeType", type="image/png"),
+     *      )
+     * )
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
+     */
+    #[Route('/api/pictures', name: 'picture.create', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour accéder à cette ressource.')]
+    public function createPicture(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer,
+        UrlGeneratorInterface $urlGenerator,
+        ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
+    ): JsonResponse {
+        $picture = new Picture();
+        $files = $request->files->get('file');
+        $picture->setFile($files);
+        $picture->setMimeType($files->getClientMimeType());
+        $picture->setRealName($files->getClientOriginalName());
+        $picture->setPublicPath("/assets/pictures");
+        $picture->setStatus("on");
+        $entityManager->persist($picture);
+        $entityManager->flush();
+
+        $cache->invalidateTags(['pictureCache']);
+
+        $location = $urlGenerator->generate('picture.get', ['idPicture' => $picture->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $jsonPictures = $serializer->serialize($picture, 'json', ['groups' => 'getPicture']);
+
+        $errors = $validator->validate($picture);
+        if (count($errors) > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), Response::HTTP_BAD_REQUEST, [], true);
+        }
+        return new JsonResponse($jsonPictures, Response::HTTP_OK, ['Location' => $location], true);
+    }
+
+
     /**
      * Route to get one picture by id
      * @OA\Tag(name="Picture")
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
     #[Route('/api/picture/{idPicture}', name: 'picture.get', methods: ['GET'])]
     #[ParamConverter('picture', options: ['id' => 'idPicture'])]
@@ -60,51 +122,17 @@ class PictureController extends AbstractController
         return new JsonResponse(null, JsonResponse::HTTP_NOT_FOUND);
     }
 
-    /**
-     * Route for create a picture
-     * @OA\Tag(name="Picture")
-     * Security(name: 'Bearer')]
-     *@OA\RequestBody(
-     *      description= "Complete field to create a picture",
-     *      required= true,
-     *      @OA\JsonContent(
-     *          type="object",
-     *          @OA\Property(property="realName", type="string"),
-     *          @OA\Property(property="realPath", type="string"),
-     *          @OA\Property(property="mimeType", type="image/png"),
-     *      )
-     * )
-     */
-    #[Route('/api/pictures', name: 'picture.create', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour accéder à cette ressource.')]
-    public function createPicture(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        SerializerInterface $serializer,
-        UrlGeneratorInterface $urlGenerator,
-        TagAwareCacheInterface $cache
-    ): JsonResponse {
-        $picture = new Picture();
-        $files = $request->files->get('file');
-        $picture->setFile($files);
-        $picture->setMimeType($files->getClientMimeType());
-        $picture->setRealName($files->getClientOriginalName());
-        $picture->setPublicPath("/assets/pictures");
-        $picture->setStatus("on");
-        $entityManager->persist($picture);
-        $entityManager->flush();
-
-        $cache->invalidateTags(['pictureCache']);
-
-        $location = $urlGenerator->generate('picture.get', ['idPicture' => $picture->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-        $jsonPictures = $serializer->serialize($picture, 'json', ['groups' => 'getPicture']);
-        return new JsonResponse($jsonPictures, Response::HTTP_OK, ['Location' => $location], true);
-    }
 
     /**
      * Route for update a picture
      * @OA\Tag(name="Picture")
      * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
     #[Route('/api/deletePicture/{idPicture}', name: 'picture.delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour accéder à cette ressource.')]

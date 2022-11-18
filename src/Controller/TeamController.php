@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\Team;
-use JMS\Serializer\Serializer;
 use App\Repository\TeamRepository;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,7 +17,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use OpenApi\Attributes as OA;
+use OpenApi\Annotations as OA;
 
 class TeamController extends AbstractController
 {
@@ -34,18 +33,24 @@ class TeamController extends AbstractController
 
     /**
      * Route to get all teams
+     * @OA\Tag(name="Team")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Team')]
-    #[OA\Parameter (name: 'id', in: 'path', description: 'Team id', required: true)]
     #[Route('/api/teams', name: 'teams.getAll', methods: ['GET'])]
     public function getTeams(
         TeamRepository $repository,
         SerializerInterface $serializer,
-        TagAwareCacheInterface $cache, 
-        ): JsonResponse {
-            $idCache = 'getAllTeams';
-            $data = $cache->get($idCache, function (ItemInterface $item) use ($repository, $serializer) {
-            
+        TagAwareCacheInterface $cache,
+    ): JsonResponse {
+        $idCache = 'getAllTeams';
+        $data = $cache->get($idCache, function (ItemInterface $item) use ($repository, $serializer) {
+
             echo 'Mise en cache OK';
             $item->tag('teamCache');
 
@@ -58,8 +63,15 @@ class TeamController extends AbstractController
 
     /**
      * Route to get one team by id
+     * @OA\Tag(name="Team")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Team')]
     #[OA\Response(
         response: 200,
         description: 'Successful response',
@@ -87,17 +99,32 @@ class TeamController extends AbstractController
 
     /**
      * Route to create a team
+     * @OA\Tag(name="Team")
+     * Security(name: 'Bearer')]
+     *@OA\RequestBody(
+     *      description= "Enter the team name to create a new team ",
+     *      required= true,
+     *      @OA\JsonContent(
+     *          type="object",
+     *          @OA\Property(property="teamName", type="string"),
+     *      )
+     * )
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Team')]
     #[Route('/api/createTeam', name: 'createTeam.create', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     public function createTeam(
-        ValidatorInterface $validator, 
-        Request $request, 
-        SerializerInterface $serializer, 
-        EntityManagerInterface $entityManager, 
+        ValidatorInterface $validator,
+        Request $request,
+        SerializerInterface $serializer,
+        EntityManagerInterface $entityManager,
         TagAwareCacheInterface $cache
-        ): JsonResponse {
+    ): JsonResponse {
 
         $cache->invalidateTags(['teamCache']);
         $data = $request->getContent();
@@ -119,8 +146,15 @@ class TeamController extends AbstractController
 
     /**
      * Route to update a team with id
+     * @OA\Tag(name="Team")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Team')]
     #[Route('/api/updateTeam/{id}', name: 'updateTeam.update', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     public function updateTeam(
@@ -137,7 +171,7 @@ class TeamController extends AbstractController
         $team = $repository->find($id);
         $data = $request->getContent();
 
-        
+
         $updateTeam = $serializer->deserialize($data, Team::class, 'json');
         $team->setTeamName($updateTeam->getTeamName() ? $updateTeam->getTeamName() : $team->getTeamName());
         $team->setStatusTeam($updateTeam->getStatusTeam() ? $updateTeam->getStatusTeam() : $team->getStatusTeam());
@@ -145,7 +179,7 @@ class TeamController extends AbstractController
         $entityManager->flush();
         $context = SerializationContext::create()->setGroups(['team']);
         $jsonTeam = $serializer->serialize($team, 'json', $context);
-        
+
         $errors = $validator->validate($team);
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
@@ -156,8 +190,15 @@ class TeamController extends AbstractController
 
     /** 
      * Route to delete a team by id 
-    */
-    #[OA\Tag(name: 'Team')]
+     * @OA\Tag(name="Team")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
+     */
     #[Route('/api/deleteTeam/{idTeam}', name: 'deleteTeam.delete', methods: ['DELETE'])]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
@@ -179,9 +220,16 @@ class TeamController extends AbstractController
     }
 
     /** 
-    * Route to change status team by id 
-    */
-    #[OA\Tag(name: 'Team')]
+     * Route to change status team by id 
+     * @OA\Tag(name="Team")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
+     */
     #[Route('/api/softDeleteTeam/{idTeam}', name: 'softDeleteTeam.delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour effectuer cette action')]
     #[ParamConverter('team', options: ['id' => 'idTeam'])]
