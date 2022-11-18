@@ -14,6 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,8 +32,24 @@ class PictureController extends AbstractController
     }
 
     /**
-     * Route to get one picture by id
+     * Route to create a new picture
      * @OA\Tag(name="Picture")
+     * Security(name="Bearer")
+     * @OA\RequestBody(
+     * description= "Complete field to create a picture",
+     *      required= true,
+     *      @OA\JsonContent(
+     *         @OA\RequestBody(
+     *             @OA\Property(property="mimeType", type="image/png"),
+    *  )
+    * )
+    * )
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
     #[Route('/api/picture/{idPicture}', name: 'picture.get', methods: ['GET'])]
     #[ParamConverter('picture', options: ['id' => 'idPicture'])]
@@ -82,7 +99,8 @@ class PictureController extends AbstractController
         EntityManagerInterface $entityManager,
         SerializerInterface $serializer,
         UrlGeneratorInterface $urlGenerator,
-        TagAwareCacheInterface $cache
+        TagAwareCacheInterface $cache,
+        ValidatorInterface $validator
     ): JsonResponse {
         $picture = new Picture();
         $files = $request->files->get('file');
@@ -98,6 +116,12 @@ class PictureController extends AbstractController
 
         $location = $urlGenerator->generate('picture.get', ['idPicture' => $picture->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         $jsonPictures = $serializer->serialize($picture, 'json', ['groups' => 'getPicture']);
+
+        $errors = $validator->validate($picture);
+        if (count($errors) > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), Response::HTTP_BAD_REQUEST, [], true);
+        }
+
         return new JsonResponse($jsonPictures, Response::HTTP_OK, ['Location' => $location], true);
     }
 
@@ -105,6 +129,12 @@ class PictureController extends AbstractController
      * Route for update a picture
      * @OA\Tag(name="Picture")
      * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
     #[Route('/api/deletePicture/{idPicture}', name: 'picture.delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits pour accéder à cette ressource.')]
