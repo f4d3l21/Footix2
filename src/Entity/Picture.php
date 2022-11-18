@@ -6,12 +6,12 @@ use App\Repository\PictureRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation\UploadableField;
-use Vich\UploaderBundle\Mapping\Annotation\Uploadable;
 use Symfony\Component\Serializer\Annotation\Groups;
-
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: PictureRepository::class)]
 /**
- * @Uploadable()
+ * @Vich\Uploadable()
  */
 class Picture
 {
@@ -38,15 +38,16 @@ class Picture
     private ?string $mimeType = null;
 
     #[ORM\Column(length: 20)]
+    #[Assert\Choice(choices: ["on", "off"], message: 'Le statut doit être on ou off')]
     #[Groups(["getPicture"])]
     private ?string $status = null;
 
 
     /**
      * @var File|null
-     * @UploadableField(mapping="pictures", fileNameProperty="realPath")
+     *@Vich\UploadableField(mapping="pictures", fileNameProperty="realPath")
      */
-    private ?File $file;
+    private ?File $file = null;
 
     public function getId(): ?int
     {

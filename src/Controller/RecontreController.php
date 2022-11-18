@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use OpenApi\Attributes as OA;
+use OpenApi\Annotations as OA;
 
 class RecontreController extends AbstractController
 {
@@ -33,8 +33,15 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get all rencontres
+     * @OA\Tag(name="Rencontre")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres', name: 'rencontres.getAll', methods: ['GET'])]
     public function getRencontres(
         RencontreRepository $repository,
@@ -58,8 +65,15 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get one rencontre by id
+     * @OA\Tag(name="Rencontre")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres/{id}', name: 'rencontres.getOne', methods: ['GET'])]
     public function getOneRencontre(
         Rencontre $rencontre,
@@ -79,8 +93,15 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get rencontre team win by id
+     * @OA\Tag(name="Rencontre")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     *)
      */
-    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/rencontres/team/{id}', name: 'rencontres.getByTeam', methods: ['GET'])]
     public function getRencontreByTeam(
         TeamRepository $teamRepository,
@@ -102,8 +123,15 @@ class RecontreController extends AbstractController
 
     /**
      * Route to get team ratio by id
+     * @OA\Tag(name="Rencontre")
+     * Security(name: 'Bearer')]
+     * @OA\Response(
+     *     response=200,
+     *    description="Successful response",
+     *     response=404,
+     *   description="Not found",
+     * )
      */
-    #[OA\Tag(name: 'Rencontre')]
     #[Route('/api/teams/{id}/ratio', name: 'rencontre.getOneRatio', methods: ['GET'])]
     public function getOneTeamRatio(
         RencontreRepository $repository,
